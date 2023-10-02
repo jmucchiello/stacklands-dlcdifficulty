@@ -1,5 +1,8 @@
 {
-	"id": "example_mod",
-	"name": "Example Mod",
-	"version": "0.0.1"
+	"id": "dlc_difficulty_mod",
+	"name": "DLC Difficulty Mod",
+	"version": "0.1.0",
+	"optionalDependencies": [
+		"spawn_control_mod"
+	]
 }

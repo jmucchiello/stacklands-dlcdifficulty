@@ -1,11 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <AssemblyName>ExampleMod</AssemblyName>
+    <AssemblyName>DlcDifficultyMod</AssemblyName>
     <TargetFramework>netstandard2.1</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>warnings</Nullable>
     <LangVersion>latest</LangVersion>
+    <RootNamespace>DlcDifficultyModNS</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
