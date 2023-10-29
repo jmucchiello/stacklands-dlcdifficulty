@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
 using HarmonyLib;
+using CommonModNS;
 
 namespace DlcDifficultyModNS
 {
@@ -16,50 +17,53 @@ namespace DlcDifficultyModNS
             //SpecialEvents_Patch.SadEventDivisor = Math.Clamp(value, 1, 8);
         }
 
-        public void ApplyDLC()
+        public void ApplyConfig()
         {
             SetupHappinessCards();
             SetupDeathLifestages();
-            SetupSadEventFrequency();
         }
 
         public void SetupHappinessCards()
         {
-            float happinessBlueprintModifier = Difficulty switch
+            float happinessModifier = SadnessSpeed switch
             {
-                <= DifficultyType.VeryEasy => 0.8f,
-                >= DifficultyType.VeryHard => 1.2f,
+                Speed.FASTER => 0.75f,
+                Speed.SLOWER => 1.25f,
                 _ => 1f
             };
-            if (happinessBlueprintModifier != 1f)
+            if (happinessModifier != 1f)
             {
                 new List<BlueprintTimerModifier>() {
-                    new BlueprintTimerModifier() { blueprintId = "blueprint_admire_coin", subprintindex = 0, multiplier = happinessBlueprintModifier },
-                    new BlueprintTimerModifier() { blueprintId = "blueprint_euphoria", subprintindex = 0, multiplier = happinessBlueprintModifier },
-                    new BlueprintTimerModifier() { blueprintId = "blueprint_happiness", subprintindex = 0, multiplier = happinessBlueprintModifier },
-                    new BlueprintTimerModifier() { blueprintId = "blueprint_tavern", subprintindex = 0, multiplier = happinessBlueprintModifier }
+                    new BlueprintTimerModifier() { blueprintId = "blueprint_admire_coin", subprintindex = 0, multiplier = happinessModifier },
+                    new BlueprintTimerModifier() { blueprintId = "blueprint_euphoria", subprintindex = 0, multiplier = happinessModifier },
+                    new BlueprintTimerModifier() { blueprintId = "blueprint_happiness", subprintindex = 0, multiplier = happinessModifier },
+                    new BlueprintTimerModifier() { blueprintId = "blueprint_tavern", subprintindex = 0, multiplier = happinessModifier }
+                }.ForEach(x => x.AddToList());
+
+                new List<GameCardTimerModifier>() {
+                    new GameCardTimerModifier() { actionId = "complete_charity", myCardDataType = typeof(Charity), multiplier = happinessModifier },
+                    new GameCardTimerModifier() { actionId = "research_food", myCardDataType = typeof(Tavern), multiplier = happinessModifier },
+                    new GameCardTimerModifier() { actionId = "complete_petting", myCardDataType = typeof(PettingZoo), multiplier = happinessModifier }
                 }.ForEach(x => x.AddToList());
             }
-            Log($"Happiness creation multiplier {happinessBlueprintModifier}");
+
+            GameCardStartTimer_Patch.modifiers.Add(new GameCardTimerModifier()
+            {
+                actionId = "research_food",
+                myCardDataType = typeof(Tavern),
+                multiplier = happinessModifier
+            });
+            Log($"Happiness creation multiplier {happinessModifier}");
         }
 
         public void SetupDeathLifestages()
         {
-            if (difficulty == DifficultyType.Brutal)
-            {
-                AgingDetermination.Teenager = 1;
-                AgingDetermination.Adult = 5;
-                AgingDetermination.Elderly = 6;
-            }
-            else if (difficulty < DifficultyType.VeryEasy)
-            {
-                AgingDetermination.Teenager = 3;
-                AgingDetermination.Adult = 9;
-                AgingDetermination.Elderly = 12;
-            }
+            AgingDetermination.Teenager = AgingSpeed switch { Speed.FASTER => 1, Speed.SLOWER => 3, _ => 2 };
+            AgingDetermination.Adult    = AgingSpeed switch { Speed.FASTER => 5, Speed.SLOWER => 9, _ => 6 };
+            AgingDetermination.Elderly  = AgingSpeed switch { Speed.FASTER => 6, Speed.SLOWER => 12, _ => 8 };
             Log($"Death Curse Lifespans - Teens: {AgingDetermination.Teenager}, Adults: {AgingDetermination.Adult}, Elderly: {AgingDetermination.Elderly}");
         }
-
+#if UNDEFINED
         public void SetupSadEventFrequency()
         {
             switch (difficulty)
@@ -78,8 +82,9 @@ namespace DlcDifficultyModNS
                     break;
             }
             if (!AllowSadEvents) SpecialEvents_Patch.SadEventMinMonth = 1000000;
-            DifficultyMod.Log($"Sad Event Frequency {SpecialEvents_Patch.SadEventDivisor} Min Month {SpecialEvents_Patch.SadEventMinMonth}");
+            I.Log($"Sad Event Frequency {SpecialEvents_Patch.SadEventDivisor} Min Month {SpecialEvents_Patch.SadEventMinMonth}");
         }
+#endif
     }
 
     [HarmonyPatch(typeof(BaseVillager), nameof(BaseVillager.DetermineLifeStageFromAge))]
@@ -103,7 +108,7 @@ namespace DlcDifficultyModNS
     {
         static void Postfix(DemandManager __instance, ref Demand __result)
         {
-            if (DifficultyMod.Difficulty > DifficultyType.VeryEasy || DifficultyMod.Difficulty < DifficultyType.VeryHard)
+            if (DlcDifficultyMod.GreedDifficulty == Difficulty.NORMAL || __result.IsFinalDemand)
                 return;
 
             Demand demand = new Demand() { Amount = __result.Amount,
@@ -120,15 +125,15 @@ namespace DlcDifficultyModNS
                                            BlueprintIds = __result.BlueprintIds,
                                            IsFinalDemand = __result.IsFinalDemand
             };
-            if (DifficultyMod.Difficulty <= DifficultyType.VeryEasy)
+            if (DlcDifficultyMod.GreedDifficulty == Difficulty.EASIER)
             {
-                if (__result.Amount > 2) demand.Amount--;
-                else __result.Duration++;
+                if (__result.Amount > 2) --demand.Amount;
+                else ++__result.Duration;
             }
-            else if (DifficultyMod.Difficulty >= DifficultyType.VeryHard)
+            else if (DlcDifficultyMod.GreedDifficulty == Difficulty.HARDER)
             {
-                if (__result.Amount > 2) demand.Amount++;
-                else if (__result.Duration >= 2) demand.Duration--;
+                if (__result.Amount > 2) ++demand.Amount;
+                else if (__result.Duration >= 2) --demand.Duration;
             }
             __result = demand;
         }
@@ -139,7 +144,7 @@ namespace DlcDifficultyModNS
     {
         static bool Prefix(House __instance, ref bool __result, CardData otherCard)
         {
-            if (DifficultyMod.Difficulty >= DifficultyType.VeryHard && otherCard.Id == "old_villager")
+            if (!DlcDifficultyMod.AllowOldProcreation && otherCard is OldVillager)
             {
                 __result = false;
                 return false;
