@@ -1,13 +1,19 @@
-# DLC Difficulty Settings
-
-This mod allows you to alter the difficulty of various parts of the Spirit World DLC.
+# Cursed Worlds Extras
+This mod allows you to alter the difficulty of various parts of the Spirit World DLC. All options require the DLC is installed and activated within Stacklands.
 
 ## Global Settings
 
-### Access DLC in all new games
+### Allow DLC World only runs
+You can turn this on or off. It is ***on*** by default.
+
+In the main menu, just below "Start New Run" is "Start Cursed World Only Run". 
+When you click it, the game options screen lets you choose a Cursed World to play without having to tame the forest, fight demons and witches, and sale to a distant island.
+Instead, you just jump right into the Cursed World and liberate those poor souls from their harrowing existence. And when you are done, the game is over.
+
+### Allow New Games to Include DLC
 You can turn this on or off. It is ***off*** by default.
 
-When enabled, all save games can be created with Death and/or Sadness DLC whether or not those worlds have been defeated in the save game.
+When enabled, all save games can be created with Death and/or Sadness Curses whether or not those worlds have been defeated in the save game.
 (Even if you don't use the rest of this Mod, this should be very useful to you.)
 
 ### Rabbits of Doom

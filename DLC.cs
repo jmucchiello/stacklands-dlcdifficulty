@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text;
 using HarmonyLib;
 using CommonModNS;
+using UnityEngine;
 
 namespace DlcDifficultyModNS
 {
@@ -21,6 +22,7 @@ namespace DlcDifficultyModNS
         {
             SetupHappinessCards();
             SetupDeathLifestages();
+            ButtonNewDlcGame?.gameObject.SetActive(AllowNewGameDlc);
         }
 
         public void SetupHappinessCards()
@@ -103,39 +105,74 @@ namespace DlcDifficultyModNS
         }
     }
 
-    [HarmonyPatch(typeof(DemandManager), nameof(DemandManager.GetDemandToStart))]
+    [HarmonyPatch]
     public class AlterDemands
     {
-        static void Postfix(DemandManager __instance, ref Demand __result)
+        static Demand currentDemand;
+
+        [HarmonyPatch(typeof(DemandManager), nameof(DemandManager.GetDemandById))]
+        [HarmonyPostfix]
+        static void GetDemandById(DemandManager __instance, ref Demand __result, string demandId)
+        {
+            if (currentDemand == null) GetDemandToStart(__instance, ref __result);
+            __result = currentDemand;
+        }
+
+        [HarmonyPatch(typeof(DemandManager), nameof(DemandManager.GetDemandToStart))]
+        [HarmonyPostfix]
+        static void GetDemandToStart(DemandManager __instance, ref Demand __result)
         {
             if (DlcDifficultyMod.GreedDifficulty == Difficulty.NORMAL || __result.IsFinalDemand)
                 return;
 
-            Demand demand = new Demand() { Amount = __result.Amount,
-                                           Duration = __result.Duration, 
-                                           Difficulty = __result.Difficulty,
-                                           DemandId = __result.DemandId,
-                                           CardToGet = __result.CardToGet,
-                                           QuestFailedAnimationStates = __result.QuestFailedAnimationStates,
-                                           QuestStartAnimationStates = __result.QuestStartAnimationStates,
-                                           QuestSuccessAnimationStates = __result.QuestSuccessAnimationStates,
-                                           ShouldDestroyOnComplete = __result.ShouldDestroyOnComplete,
-                                           SuccessCards = __result.SuccessCards,
-                                           FailedCards = __result.FailedCards,
-                                           BlueprintIds = __result.BlueprintIds,
-                                           IsFinalDemand = __result.IsFinalDemand
-            };
+            currentDemand = ScriptableObject.CreateInstance<Demand>();
+            //I.Log($"CreateInstance<Demand> {(currentDemand == null?"isnull":"notnull")}");
+            currentDemand.Amount = __result.Amount;
+            currentDemand.Duration = __result.Duration;
+            currentDemand.Difficulty = __result.Difficulty;
+            currentDemand.DemandId = __result.DemandId;
+            currentDemand.CardToGet = __result.CardToGet;
+            currentDemand.QuestFailedAnimationStates = __result.QuestFailedAnimationStates;
+            currentDemand.QuestStartAnimationStates = __result.QuestStartAnimationStates;
+            currentDemand.QuestSuccessAnimationStates = __result.QuestSuccessAnimationStates;
+            currentDemand.ShouldDestroyOnComplete = __result.ShouldDestroyOnComplete;
+            currentDemand.SuccessCards = __result.SuccessCards;
+            currentDemand.FailedCards = __result.FailedCards;
+            currentDemand.BlueprintIds = __result.BlueprintIds;
+            currentDemand.IsFinalDemand = __result.IsFinalDemand;
+
             if (DlcDifficultyMod.GreedDifficulty == Difficulty.EASIER)
             {
-                if (__result.Amount > 2) --demand.Amount;
-                else ++__result.Duration;
+                if (__result.Amount > 2)
+                {
+                    --currentDemand.Amount;
+                    I.Log($"{currentDemand.DemandId} for {currentDemand.CardToGet} made easier by reducing the number needed to {currentDemand.Amount}.");
+                }
+                else
+                {
+                    ++__result.Duration;
+                    I.Log($"{currentDemand.DemandId} for {currentDemand.CardToGet} made easier by increasing the duration to {currentDemand.Duration} moons.");
+                }
             }
             else if (DlcDifficultyMod.GreedDifficulty == Difficulty.HARDER)
             {
-                if (__result.Amount > 2) ++demand.Amount;
-                else if (__result.Duration >= 2) --demand.Duration;
+                if (__result.Amount > 2)
+                {
+                    ++currentDemand.Amount;
+                    I.Log($"{currentDemand.DemandId} for {currentDemand.CardToGet} made harder by increasing the number needed to {currentDemand.Amount}.");
+                }
+                else if (__result.Duration >= 2)
+                {
+                    --currentDemand.Duration;
+                    I.Log($"{currentDemand.DemandId} for {currentDemand.CardToGet} made harder by decreasing the duration to {currentDemand.Duration} moons.");
+                }
+                else
+                {
+                    I.Log($"{currentDemand.DemandId} for {currentDemand.CardToGet} could not be made harder.");
+
+                }
             }
-            __result = demand;
+            __result = currentDemand;
         }
     }
 

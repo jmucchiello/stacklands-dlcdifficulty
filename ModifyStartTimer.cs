@@ -151,14 +151,14 @@ namespace CommonModNS
 
         static void Prefix(GameCard __instance, ref float time, TimerAction a, string status, string actionId, string blueprintId, int subprintIndex)
         {
-            I.Log($"Blueprint {blueprintId} index {subprintIndex} actionId {actionId}");
+            //I.Log($"Blueprint {blueprintId} index {subprintIndex} actionId {actionId}");
             BlueprintTimerModifier m = modifiers.FirstOrDefault(x => x.blueprintId == blueprintId && (x.subprintindex == subprintIndex || x.subprintindex == -1));
             if (m != null)
             {
-                I.Log($"Blueprint {blueprintId} index {subprintIndex} time on entry {time} {m.multiplier} {m.newTime}");
+                //I.Log($"Blueprint {blueprintId} index {subprintIndex} time on entry {time} {m.multiplier} {m.newTime}");
                 if (m.multiplier > 0f) { time = time * m.multiplier; }
                 else if (m.newTime > 0f) { time = m.newTime; }
-                I.Log($"Blueprint {blueprintId} index {subprintIndex} time on exit {time}");
+                //I.Log($"Blueprint {blueprintId} index {subprintIndex} time on exit {time}");
             }
         }
     }

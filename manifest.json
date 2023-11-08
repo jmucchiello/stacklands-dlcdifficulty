@@ -1,6 +1,6 @@
 {
-	"id": "dlc_difficulty_mod",
-	"name": "Spirit DLC Difficulty",
+	"id": "dlc_extras_mod",
+	"name": "Cursed Worlds DLC Extras",
 	"version": "0.1.0",
 	"optionalDependencies": [
 		"spawn_control_mod"
